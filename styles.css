@@ -164,16 +164,6 @@ label[for=fileInput]{
     cursor:pointer;
 }
 
-.rmotion{
-    display:inline-flex;
-    gap:8px;
-    align-items:center;
-    background:#0b1220;
-    border:1px solid rgba(255,255,255,.08);
-    padding:10px 12px;
-    border-radius:10px;
-}
-
 /* ---------- Game Area ---------- */
 #gameArea{
   position:relative;

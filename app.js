@@ -3,7 +3,6 @@
   const GAME_DURATION = 30; // seconds
   const SPAWN_MS = 700;     // spawn interval
   const LS_HIGH = 'popafriend_highscore';
-  const LS_RM   = 'popafriend_reduce_motion';
 
   // data URLs
   let photos = [];
@@ -11,7 +10,6 @@
   let timeLeft = GAME_DURATION;
   let timerId = null, spawnId = null;
   let running = false;
-  let reduceMotion = false;
 
   // Cache jQuery elements
   const $mainCard = $('#mainCard');
@@ -26,12 +24,9 @@
   const $final = $('#finalScore');
   const $strip = $('#avatarStrip');
   const $high = $('#highScore');
-  const $reduceChk = $('#reduceMotionChk');
 
   // Load preferences
   loadHighScore();
-  loadReduceMotion();
-
   // Intro page flip + slideDown
   $('#startIntro').on('click', function(){
     $('#introPage').addClass('flip');
@@ -52,23 +47,10 @@
     $(this).text(t);
   });
 
-  // Reduce Motion
-  $reduceChk.on('change', function(){
-    reduceMotion = this.checked;
-    localStorage.setItem(LS_RM, reduceMotion ? '1' : '0');
-  });
-
-  function loadReduceMotion(){
-    const val = localStorage.getItem(LS_RM);
-    reduceMotion = val === '1';
-    $reduceChk.prop('checked', reduceMotion);
-  }
-
-  // Helpers to respect Reduce Motion while still showcasing jQuery effects
+  // Animation helpers ensure elements using flex display fade correctly.
   // Ensure elements that rely on `display:flex` get that display value and
   // always end with opacity 1 when shown (fixes invisible-but-clickable balloons).
   function fxFadeIn($el, dur){
-    if (reduceMotion) { $el.css({ display: 'flex', opacity: 1 }); return; }
     // Ensure correct display for flex elements, reset opacity and animate to 1.
     // Use a completion callback to guarantee the final opacity and display.
     $el.stop(true).css('display', 'flex').css('opacity', 0).animate({ opacity: 1 }, dur, function(){
@@ -76,15 +58,12 @@
     });
   }
   function fxFadeOut($el, dur, done){
-    if (reduceMotion) { $el.hide(); done && done(); return; }
     $el.stop(true).animate({ opacity: 0 }, dur, function(){ $(this).hide(); done && done(); });
   }
   function fxAnimate($el, props, opts){
-    if (reduceMotion) { $el.css(props); opts && opts.complete && opts.complete.call($el[0]); return; }
     $el.animate(props, opts);
   }
-  function fxSlideDown($el, dur){ reduceMotion ? $el.show() : $el.slideDown(dur); }
-  // Use real slideDown/slideToggle while reduceMotion mainly affects game animations
+  function fxSlideDown($el, dur){ $el.slideDown(dur); }
 
   // Device upload
   $('#fileInput').on('change', function(e){
@@ -168,7 +147,7 @@
     if (!running) return;
     const areaW = $game.innerWidth(), areaH = $game.innerHeight();
     const x = Math.max(8, Math.floor(Math.random() * (areaW - 98)));
-    const duration = reduceMotion ? 0 : (6000 + Math.random()*4000);
+    const duration = 6000 + Math.random()*4000;
     const img = photos.length ? photos[Math.floor(Math.random()*photos.length)] : null;
 
     const $b = $('<div class="balloon" aria-label="balloon"></div>').css({ left: x + 'px', opacity: 0, bottom: -120 });
@@ -186,14 +165,23 @@
       complete: function(){ $(this).remove(); }
     });
 
-    // pop on click
-    $b.on('click', function(){
-      if (!running) return;
-      score++; $score.text(score);
+    // pop on click (balloon body or face)
+    const handlePop = function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      popBalloon($(this).closest('.balloon'));
+    };
+    $b.on('click', handlePop);
+    $face.on('click', handlePop);
+  }
 
-      // stop current float and pop away
-      $(this).stop(true);
-      fxFadeOut($(this), 140, function(){ $(this).remove(); });
-    });
+  function popBalloon($balloon){
+    if (!running || !$balloon || !$balloon.length) return;
+    if ($balloon.data('popped')) return;
+    $balloon.data('popped', true);
+    score++; $score.text(score);
+
+    $balloon.stop(true);
+    fxFadeOut($balloon, 140, function(){ $(this).remove(); });
   }
 })();
