@@ -147,7 +147,7 @@
     if (!running) return;
     const areaW = $game.innerWidth(), areaH = $game.innerHeight();
     const x = Math.max(8, Math.floor(Math.random() * (areaW - 98)));
-    const duration = 6000 + Math.random()*4000;
+    const duration = 3500 + Math.random()*2500;
     const img = photos.length ? photos[Math.floor(Math.random()*photos.length)] : null;
 
     const $b = $('<div class="balloon" aria-label="balloon"></div>').css({ left: x + 'px', opacity: 0, bottom: -120 });
